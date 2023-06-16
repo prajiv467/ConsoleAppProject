@@ -30,10 +30,10 @@ class Program
             for (int i = 0; i < n; i++)
             {
                 Console.Write($"Enter interval {i + 1} (From, To, Data): ");
-                string[] input = Console.ReadLine().Split(',');
+                string[] input = Console.ReadLine().Split('-');
                 int from = int.Parse(input[0]);
                 int to = int.Parse(input[1]);
-                List<string> data = input[2].Split(',').ToList();
+                List<string> data = input[2].Split('-').ToList();
 
                 intervals.Add(new Interval(from, to, data));
             }
@@ -45,9 +45,9 @@ class Program
             {
 #if DEBUG
                 Console.WriteLine($"{interval.From}\t{interval.To}\t{string.Join(",", interval.Data)}");
-                Console.ReadLine();
 #endif
             }
+            Console.ReadLine();
         }
         catch (Exception ex)
         {
@@ -60,31 +60,27 @@ class Program
 
         List<Interval> rearrangedIntervals = new List<Interval>();
         List<Interval> overlappingIntervals = new List<Interval>();
+        List<string> FirstData = null;
         foreach (Interval interval in intervals)
         {
-            //if (rearrangedIntervals.Count == 0)
-            //{
-            //    overlappingIntervals.Add(interval);
-            //    overlappingIntervals = overlappingIntervals.Where(i => !(interval.To < i.From || interval.From > i.To))
-            //    .ToList();
-            //}
-            //else
-            //{
                 overlappingIntervals = rearrangedIntervals
                 .Where(i => !(interval.To < i.From || interval.From > i.To))
                 .ToList();
-            //}
+        
             if (overlappingIntervals.Any())
             {
                 List<string> allData = overlappingIntervals.SelectMany(i => i.Data).ToList();
                 List<string> OriginalData = overlappingIntervals.SelectMany(i => i.Data).ToList();
+                List<string> MergedIntervals = overlappingIntervals.SelectMany(i => i.Data).ToList(); ;
+                if (OriginalData.Count == 1) { FirstData = overlappingIntervals.SelectMany(i => i.Data).ToList(); }
+
                 allData.AddRange(interval.Data);
 
                 int minFrom = overlappingIntervals.Min(i => i.From);
                 int maxTo = overlappingIntervals.Max(i => i.To);
-
-                
-
+                MergedIntervals.Clear();
+                MergedIntervals.AddRange(FirstData);
+                MergedIntervals.AddRange(interval.Data);
                 if (interval.From < maxTo && interval.From > minFrom)
                 {
                     rearrangedIntervals.Add(new Interval(minFrom, interval.From - 1, OriginalData));
@@ -93,9 +89,9 @@ class Program
                 {
                     rearrangedIntervals.Add(new Interval(interval.From, minFrom - 1, interval.Data));
                 }
-                else if (interval.From < maxTo)
+                else if (interval.From < maxTo )
                 {
-                    rearrangedIntervals.Add(new Interval(interval.From, maxTo, allData));
+                    rearrangedIntervals.Add(new Interval(interval.From, maxTo, MergedIntervals));
                 }
                 if (interval.To > maxTo)
                 {
@@ -113,6 +109,7 @@ class Program
                 rearrangedIntervals.Add(interval);
             }
         }
+
         rearrangedIntervals = rearrangedIntervals.OrderBy(i => i.From).ToList();
         // Split any large intervals into smaller non-overlapping intervals
         List<Interval> finalIntervals = new List<Interval>();
